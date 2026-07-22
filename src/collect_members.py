@@ -44,6 +44,13 @@ class Member:
     description: str
 
 
+def normalize_name(name: str) -> str:
+    cleaned = name.lower()
+    cleaned = re.sub(r"\b(bv|b\.v\.|b\.v|netherlands|the)\b", "", cleaned)
+    cleaned = re.sub(r"[^a-z0-9]+", "", cleaned)
+    return cleaned
+
+
 class TextExtractor(HTMLParser):
     """Small dependency-free text extractor for simple CMS pages."""
 
@@ -208,6 +215,48 @@ def collect_members(delay_seconds: float) -> list[Member]:
     return members
 
 
+def load_supplemental_websites(path: Path | None) -> dict[str, str]:
+    if not path or not path.exists():
+        return {}
+
+    websites: dict[str, str] = {}
+    with path.open(newline="", encoding="utf-8-sig") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            name = (row.get("name") or row.get("organization") or "").strip()
+            website = normalize_url(row.get("website_url") or row.get("website") or "")
+            if name and website:
+                websites[normalize_name(name)] = website
+    return websites
+
+
+def apply_supplemental_websites(
+    members: list[Member],
+    supplemental_websites: dict[str, str],
+) -> tuple[list[Member], int]:
+    if not supplemental_websites:
+        return members, 0
+
+    updated: list[Member] = []
+    applied = 0
+    for member in members:
+        website_url = member.website_url
+        supplemental_url = supplemental_websites.get(normalize_name(member.name))
+        if not website_url and supplemental_url:
+            website_url = supplemental_url
+            applied += 1
+        updated.append(
+            Member(
+                name=member.name,
+                detail_slug=member.detail_slug,
+                detail_url=member.detail_url,
+                website_url=website_url,
+                description=member.description,
+            )
+        )
+    return updated, applied
+
+
 def init_db(db_path: Path) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as conn:
@@ -319,6 +368,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         default=0.5,
         help="Delay between requests in seconds.",
     )
+    parser.add_argument(
+        "--supplemental-websites",
+        type=Path,
+        default=Path("data/member_websites.csv"),
+        help="Optional CSV with extra member websites. Columns: name, website_url.",
+    )
     return parser.parse_args(argv)
 
 
@@ -333,6 +388,9 @@ def main(argv: list[str]) -> int:
         print(f"Failed to collect members: {exc}", file=sys.stderr)
         return 1
 
+    supplemental_websites = load_supplemental_websites(args.supplemental_websites)
+    members, supplemental_count = apply_supplemental_websites(members, supplemental_websites)
+
     count = save_members(args.db, members, started_at)
     export_csv(args.db, args.csv)
     missing_websites = sum(1 for member in members if not member.website_url)
@@ -340,6 +398,8 @@ def main(argv: list[str]) -> int:
     print(f"Collected {count} LIFE Cooperative members.")
     print(f"Database: {args.db}")
     print(f"CSV: {args.csv}")
+    if supplemental_count:
+        print(f"Added supplemental websites: {supplemental_count}")
     if missing_websites:
         print(f"Members without extracted website: {missing_websites}")
     return 0
