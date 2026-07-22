@@ -6,7 +6,7 @@ websites.
 The current version does three things:
 
 1. Collects members from `https://lifecooperative.nl/en/members`.
-2. Scans member websites for dated news/blog/press-like pages from the last 61 days.
+2. Scans member websites for dated news/blog/press-like pages.
 3. Classifies findings into `newsworthy`, `possibly_newsworthy`, or `noise`.
 
 ## Outputs
@@ -37,6 +37,21 @@ On macOS/Linux:
 ```bash
 bash run_all.sh
 ```
+
+## Backfill 2026
+
+Run this once when setting up the repository to collect all detected 2026 news
+up to today:
+
+```bash
+python src/collect_members.py
+python src/scan_news.py --since 2026-01-01 --timeout 8 --max-pages-per-member 12 --delay 0.1
+python src/classify_news.py --since 2026-01-01
+```
+
+After that, the daily GitHub Actions workflow only scans the last 7 days. Items
+are stored by unique `source_url`, so already-seen news is updated rather than
+duplicated.
 
 ## Run In GitHub Actions
 
