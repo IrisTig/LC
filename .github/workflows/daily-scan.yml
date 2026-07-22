@@ -54,6 +54,17 @@ jobs:
             python src/classify_news.py --days 7
           fi
 
+      - name: Scan external RSS feeds
+        run: |
+          if [ "${{ github.event.inputs.mode || 'daily' }}" = "backfill_2026" ]; then
+            python src/scan_external_feeds.py --since 2026-01-01
+          else
+            python src/scan_external_feeds.py --days 7
+          fi
+
+      - name: Scan member vacancies
+        run: python src/scan_jobs.py --timeout 8
+
       - name: Publish dashboard data
         run: |
           mkdir -p dashboard_data
