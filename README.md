@@ -53,6 +53,29 @@ After that, the daily GitHub Actions workflow only scans the last 7 days. Items
 are stored by unique `source_url`, so already-seen news is updated rather than
 duplicated.
 
+## Dashboard
+
+Install the dashboard dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run:
+
+```bash
+streamlit run src/dashboard.py
+```
+
+The dashboard reads CSV files from:
+
+```text
+outputs/life_members/
+```
+
+You can also upload CSV files from a downloaded GitHub Actions artifact in the
+dashboard sidebar.
+
 ## Run In GitHub Actions
 
 Create a GitHub repository, copy this folder into it, and push.
@@ -85,7 +108,8 @@ life-member-monitor-output
 
 ## Notes
 
-- The current implementation uses only Python standard-library modules.
+- The pipeline scripts use only Python standard-library modules; the dashboard
+  uses `pandas` and `streamlit`.
 - The classifier is a transparent local triage layer, not yet a live OpenAI API
   classifier.
 - The scanner only visits member websites that LIFE Cooperative exposes on its
