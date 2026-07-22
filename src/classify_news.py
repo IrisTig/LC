@@ -13,6 +13,7 @@ import argparse
 import csv
 import sqlite3
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -245,15 +246,20 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Classify recent LIFE news scan results.")
     parser.add_argument("--db", type=Path, default=Path("data/life_members.sqlite"))
     parser.add_argument("--csv", type=Path, default=Path("outputs/life_members/classified_recent_news.csv"))
-    parser.add_argument("--since", default="2026-05-22")
-    parser.add_argument("--until", default="2026-07-22")
+    parser.add_argument("--days", type=int, default=61, help="Lookback window in days when --since is omitted.")
+    parser.add_argument("--since", help="Start date in YYYY-MM-DD format. Defaults to today minus --days.")
+    parser.add_argument("--until", help="End date in YYYY-MM-DD format. Defaults to today.")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    total, useful = classify_recent(args.db, args.csv, args.since, args.until)
+    today = datetime.now().date()
+    since = args.since or (today - timedelta(days=args.days)).isoformat()
+    until = args.until or today.isoformat()
+    total, useful = classify_recent(args.db, args.csv, since, until)
     print(f"Classified {total} item(s); {useful} marked newsworthy or possibly newsworthy.")
+    print(f"Window: {since} through {until}")
     print(f"CSV: {args.csv}")
     return 0
 

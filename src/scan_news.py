@@ -442,10 +442,6 @@ def save_news(
 ) -> int:
     now = datetime.now(timezone.utc).isoformat()
     with sqlite3.connect(db_path) as conn:
-        conn.execute(
-            "DELETE FROM news_items WHERE item_date >= ?",
-            (cutoff.isoformat(),),
-        )
         for item in candidates:
             conn.execute(
                 """
@@ -491,17 +487,17 @@ def save_news(
     return len(candidates)
 
 
-def export_csv(db_path: Path, csv_path: Path, cutoff: date) -> None:
+def export_csv(db_path: Path, csv_path: Path, cutoff: date, through_date: date) -> None:
     csv_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path) as conn, csv_path.open("w", newline="", encoding="utf-8-sig") as file:
         rows = conn.execute(
             """
             SELECT member_name, item_date, relevance_score, title, source_url, reason, snippet
             FROM news_items
-            WHERE item_date >= ?
+            WHERE item_date BETWEEN ? AND ?
             ORDER BY item_date DESC, relevance_score DESC, member_name
             """,
-            (cutoff.isoformat(),),
+            (cutoff.isoformat(), through_date.isoformat()),
         ).fetchall()
         writer = csv.writer(file)
         writer.writerow(["member_name", "item_date", "relevance_score", "title", "source_url", "reason", "snippet"])
@@ -513,6 +509,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--db", type=Path, default=Path("data/life_members.sqlite"))
     parser.add_argument("--csv", type=Path, default=Path("outputs/life_members/recent_news.csv"))
     parser.add_argument("--days", type=int, default=61, help="Lookback window in days.")
+    parser.add_argument("--since", help="Start date in YYYY-MM-DD format. Defaults to today minus --days.")
+    parser.add_argument("--until", help="End date in YYYY-MM-DD format. Defaults to today.")
     parser.add_argument("--timeout", type=int, default=10, help="Per-request timeout in seconds.")
     parser.add_argument("--max-pages-per-member", type=int, default=14)
     parser.add_argument("--delay", type=float, default=0.15)
@@ -526,8 +524,9 @@ def main(argv: list[str]) -> int:
         return 1
 
     init_db(args.db)
-    cutoff = datetime.now().date() - timedelta(days=args.days)
-    through_date = datetime.now().date()
+    today = datetime.now().date()
+    cutoff = date.fromisoformat(args.since) if args.since else today - timedelta(days=args.days)
+    through_date = date.fromisoformat(args.until) if args.until else today
     started_at = datetime.now(timezone.utc).isoformat()
     members = load_members(args.db)
     all_candidates: list[NewsCandidate] = []
@@ -539,7 +538,7 @@ def main(argv: list[str]) -> int:
         all_candidates.extend(found)
 
     saved = save_news(args.db, all_candidates, started_at, cutoff, through_date, len(members))
-    export_csv(args.db, args.csv, cutoff)
+    export_csv(args.db, args.csv, cutoff, through_date)
     print(f"Saved {saved} news item(s) since {cutoff.isoformat()}.")
     print(f"CSV: {args.csv}")
     return 0
