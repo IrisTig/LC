@@ -8,6 +8,8 @@ The current version does three things:
 1. Collects members from `https://lifecooperative.nl/en/members`.
 2. Scans member websites for dated news/blog/press-like pages.
 3. Classifies findings into `newsworthy`, `possibly_newsworthy`, or `noise`.
+4. Scans selected external RSS feeds for regional context signals.
+5. Scans member career pages for vacancy and growth signals.
 
 Extra website URLs that are not exposed on the LIFE member pages can be added in:
 
@@ -16,6 +18,12 @@ data/member_websites.csv
 ```
 
 The collector uses those URLs only when the scraped member record has no website.
+
+External RSS feeds can be added in:
+
+```text
+data/external_feeds.csv
+```
 
 ## Outputs
 
@@ -27,6 +35,8 @@ outputs/life_members/life_members.csv
 outputs/life_members/recent_news.csv
 outputs/life_members/recent_news_articles.csv
 outputs/life_members/classified_recent_news.csv
+outputs/life_members/external_news.csv
+outputs/life_members/member_jobs.csv
 ```
 
 ## Run Locally
@@ -55,6 +65,8 @@ up to today:
 python src/collect_members.py
 python src/scan_news.py --since 2026-01-01 --timeout 8 --max-pages-per-member 12 --delay 0.1
 python src/classify_news.py --since 2026-01-01
+python src/scan_external_feeds.py --since 2026-01-01
+python src/scan_jobs.py
 ```
 
 After that, the daily GitHub Actions workflow only scans the last 7 days. Items
