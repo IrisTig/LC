@@ -9,6 +9,14 @@ The current version does three things:
 2. Scans member websites for dated news/blog/press-like pages.
 3. Classifies findings into `newsworthy`, `possibly_newsworthy`, or `noise`.
 
+Extra website URLs that are not exposed on the LIFE member pages can be added in:
+
+```text
+data/member_websites.csv
+```
+
+The collector uses those URLs only when the scraped member record has no website.
+
 ## Outputs
 
 The scripts write:
@@ -112,8 +120,8 @@ life-member-monitor-output
   uses `pandas` and `streamlit`.
 - The classifier is a transparent local triage layer, not yet a live OpenAI API
   classifier.
-- The scanner only visits member websites that LIFE Cooperative exposes on its
-  member detail pages.
+- The scanner visits member websites from the LIFE member detail pages plus
+  supplemental URLs in `data/member_websites.csv`.
 - Some member websites block simple HTTP clients or require JavaScript. Those
   can be handled later with Playwright.
 - Keep request delays conservative when running this daily.
