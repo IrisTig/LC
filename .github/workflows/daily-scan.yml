@@ -5,6 +5,15 @@ on:
     # 07:00 UTC = 09:00 Europe/Amsterdam during summer time.
     - cron: "0 7 * * *"
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Run mode"
+        required: true
+        default: "daily"
+        type: choice
+        options:
+          - daily
+          - backfill_2026
 
 permissions:
   contents: read
@@ -30,10 +39,20 @@ jobs:
         run: python src/collect_members.py --delay 0.2
 
       - name: Scan member websites for recent news
-        run: python src/scan_news.py --days 61 --timeout 8 --max-pages-per-member 8 --delay 0.1
+        run: |
+          if [ "${{ github.event.inputs.mode || 'daily' }}" = "backfill_2026" ]; then
+            python src/scan_news.py --since 2026-01-01 --timeout 8 --max-pages-per-member 12 --delay 0.1
+          else
+            python src/scan_news.py --days 7 --timeout 8 --max-pages-per-member 8 --delay 0.1
+          fi
 
       - name: Classify recent news
-        run: python src/classify_news.py
+        run: |
+          if [ "${{ github.event.inputs.mode || 'daily' }}" = "backfill_2026" ]; then
+            python src/classify_news.py --since 2026-01-01
+          else
+            python src/classify_news.py --days 7
+          fi
 
       - name: Upload database and CSV outputs
         uses: actions/upload-artifact@v4
