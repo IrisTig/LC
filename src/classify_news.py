@@ -20,14 +20,39 @@ from urllib.parse import urlparse
 
 GENERIC_PATHS = {
     "",
+    "article",
+    "articles",
     "news",
     "nieuws",
     "blog",
+    "blogs",
     "resources",
     "events",
+    "event",
     "insights",
+    "insight",
     "articles",
+    "media",
+    "newsroom",
     "news-events",
+    "press",
+    "updates",
+}
+GENERIC_TITLES = {
+    "article",
+    "articles",
+    "blog",
+    "blogs",
+    "events",
+    "expert insights",
+    "insights",
+    "media",
+    "news",
+    "newsroom",
+    "nieuws",
+    "press",
+    "resources",
+    "updates",
 }
 
 
@@ -111,7 +136,7 @@ def classify(source_url: str, title: str, snippet: str) -> Classification:
     last = parts[-1] if parts else ""
     title_lower = title.lower()
 
-    if path in GENERIC_PATHS or last in GENERIC_PATHS or not parts:
+    if path in GENERIC_PATHS or last in GENERIC_PATHS or not parts or title_lower.strip() in GENERIC_TITLES:
         return Classification(
             0,
             "noise",
@@ -121,7 +146,7 @@ def classify(source_url: str, title: str, snippet: str) -> Classification:
             "URL en titel wijzen op een indexpagina in plaats van een concreet artikel.",
         )
 
-    if "event" in path or "webinar" in title_lower:
+    if "event" in path or "webinar" in title_lower or "webinar" in path:
         return Classification(
             1,
             "possibly_newsworthy",

@@ -55,6 +55,42 @@ NEWS_LINK_KEYWORDS = (
     "update",
     "event",
 )
+GENERIC_PATH_PARTS = {
+    "",
+    "article",
+    "articles",
+    "actualiteiten",
+    "blog",
+    "blogs",
+    "events",
+    "insight",
+    "insights",
+    "media",
+    "news",
+    "news-events",
+    "newsroom",
+    "nieuws",
+    "pers",
+    "press",
+    "resources",
+    "updates",
+}
+GENERIC_TITLES = {
+    "article",
+    "articles",
+    "blog",
+    "blogs",
+    "events",
+    "expert insights",
+    "insights",
+    "media",
+    "news",
+    "newsroom",
+    "nieuws",
+    "press",
+    "resources",
+    "updates",
+}
 RELEVANCE_KEYWORDS = {
     "funding": 18,
     "investment": 18,
@@ -220,6 +256,44 @@ def same_site(url: str, root: str) -> bool:
     url_host = urlparse(url).netloc.lower().replace("www.", "")
     root_host = urlparse(root).netloc.lower().replace("www.", "")
     return url_host == root_host
+
+
+def path_parts(url: str) -> list[str]:
+    return [part for part in urlparse(url).path.strip("/").lower().split("/") if part]
+
+
+def is_generic_listing_url(url: str, root_url: str) -> bool:
+    parts = path_parts(url)
+    root_parts = path_parts(root_url)
+    if not parts or parts == root_parts:
+        return True
+    return parts[-1] in GENERIC_PATH_PARTS and len(parts) <= 2
+
+
+def looks_like_real_article_url(url: str) -> bool:
+    parts = path_parts(url)
+    if not parts:
+        return False
+    last = parts[-1]
+    if last in GENERIC_PATH_PARTS:
+        return False
+    if re.search(r"\b20\d{2}\b|\d{4,}", url):
+        return True
+    return len(last) >= 16 and "-" in last
+
+
+def is_probably_overview_page(url: str, root_url: str, title: str, text: str) -> bool:
+    title_clean = normalize_space(title).lower()
+    if is_generic_listing_url(url, root_url):
+        return True
+    if title_clean in GENERIC_TITLES:
+        return True
+    if not looks_like_real_article_url(url):
+        lower = text.lower()
+        teaser_words = sum(lower.count(word) for word in ["read more", "lees meer", "view all", "all news"])
+        if teaser_words >= 3:
+            return True
+    return False
 
 
 def fetch_html(url: str, timeout: int) -> str | None:
@@ -413,6 +487,9 @@ def scan_member(
             continue
         item_date = max(dates)
         title = title_from(parser, url)
+        if is_probably_overview_page(url, member.website_url, title, text):
+            time.sleep(delay)
+            continue
         snippet = make_snippet(text)
         score, reason = score_relevance(f"{title}\n{snippet}")
         content_hash = hashlib.sha256(normalize_space(text).encode("utf-8")).hexdigest()

@@ -11,9 +11,19 @@ import streamlit as st
 
 
 OUTPUT_DIR = Path("outputs/life_members")
-CLASSIFIED_NEWS_PATH = OUTPUT_DIR / "classified_recent_news.csv"
-RECENT_NEWS_PATH = OUTPUT_DIR / "recent_news.csv"
-MEMBERS_PATH = OUTPUT_DIR / "life_members.csv"
+DASHBOARD_DATA_DIR = Path("dashboard_data")
+CLASSIFIED_NEWS_PATHS = [
+    DASHBOARD_DATA_DIR / "classified_recent_news.csv",
+    OUTPUT_DIR / "classified_recent_news.csv",
+]
+RECENT_NEWS_PATHS = [
+    DASHBOARD_DATA_DIR / "recent_news.csv",
+    OUTPUT_DIR / "recent_news.csv",
+]
+MEMBERS_PATHS = [
+    DASHBOARD_DATA_DIR / "life_members.csv",
+    OUTPUT_DIR / "life_members.csv",
+]
 
 NEWSWORTHY = ["newsworthy", "possibly_newsworthy", "needs_review"]
 NOISE = ["noise"]
@@ -235,12 +245,13 @@ def read_csv(source) -> pd.DataFrame:
     return pd.read_csv(source)
 
 
-def load_default_or_upload(label: str, default_path: Path) -> pd.DataFrame:
+def load_default_or_upload(label: str, default_paths: list[Path]) -> pd.DataFrame:
     uploaded = st.sidebar.file_uploader(label, type=["csv"])
     if uploaded is not None:
         return read_csv(uploaded)
-    if default_path.exists():
-        return read_csv(default_path)
+    for default_path in default_paths:
+        if default_path.exists():
+            return read_csv(default_path)
     return pd.DataFrame()
 
 
@@ -611,11 +622,14 @@ def render_news_table(news: pd.DataFrame) -> None:
 
 with st.sidebar:
     st.markdown("## Data")
-    st.write("Upload CSV's uit het GitHub Actions artifact, of zet ze lokaal in `outputs/life_members/`.")
+    st.write(
+        "Standaard leest dit dashboard uit `dashboard_data/`. "
+        "Upload CSV's alleen handmatig als je een losse artifact wilt bekijken."
+    )
 
-classified_news = clean_news(load_default_or_upload("classified_recent_news.csv", CLASSIFIED_NEWS_PATH))
-recent_news = clean_news(load_default_or_upload("recent_news.csv", RECENT_NEWS_PATH))
-members = load_default_or_upload("life_members.csv", MEMBERS_PATH)
+classified_news = clean_news(load_default_or_upload("classified_recent_news.csv", CLASSIFIED_NEWS_PATHS))
+recent_news = clean_news(load_default_or_upload("recent_news.csv", RECENT_NEWS_PATHS))
+members = load_default_or_upload("life_members.csv", MEMBERS_PATHS)
 
 news = classified_news if not classified_news.empty else recent_news
 filtered_news = apply_filters(news)
