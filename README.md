@@ -78,11 +78,13 @@ streamlit run src/dashboard.py
 The dashboard reads CSV files from:
 
 ```text
-outputs/life_members/
+dashboard_data/
 ```
 
-You can also upload CSV files from a downloaded GitHub Actions artifact in the
-dashboard sidebar.
+When running locally it also falls back to `outputs/life_members/`. You can
+still upload CSV files from a downloaded GitHub Actions artifact in the
+dashboard sidebar, but the GitHub workflow publishes the latest dashboard CSVs
+to `dashboard_data/` automatically.
 
 ## Run In GitHub Actions
 
@@ -107,6 +109,14 @@ The workflow is in:
 
 It runs daily and can also be started manually with **Run workflow** in the
 GitHub Actions tab.
+
+After each run, the workflow commits fresh CSV exports to:
+
+```text
+dashboard_data/
+```
+
+Streamlit Cloud reads those files automatically after the repository updates.
 
 After each run, download the artifact named:
 
