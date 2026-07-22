@@ -16,7 +16,7 @@ on:
           - backfill_2026
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   scan:
@@ -52,6 +52,20 @@ jobs:
             python src/classify_news.py --since 2026-01-01
           else
             python src/classify_news.py --days 7
+          fi
+
+      - name: Publish dashboard data
+        run: |
+          mkdir -p dashboard_data
+          cp outputs/life_members/*.csv dashboard_data/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dashboard_data/*.csv
+          if git diff --cached --quiet; then
+            echo "No dashboard data changes to commit."
+          else
+            git commit -m "Update dashboard data"
+            git push
           fi
 
       - name: Upload database and CSV outputs
