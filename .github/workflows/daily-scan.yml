@@ -1,0 +1,44 @@
+name: Daily LIFE member scan
+
+on:
+  schedule:
+    # 07:00 UTC = 09:00 Europe/Amsterdam during summer time.
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Prepare folders
+        run: mkdir -p data outputs/life_members
+
+      - name: Collect LIFE Cooperative members
+        run: python src/collect_members.py --delay 0.2
+
+      - name: Scan member websites for recent news
+        run: python src/scan_news.py --days 61 --timeout 8 --max-pages-per-member 8 --delay 0.1
+
+      - name: Classify recent news
+        run: python src/classify_news.py
+
+      - name: Upload database and CSV outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: life-member-monitor-output
+          path: |
+            data/life_members.sqlite
+            outputs/life_members/*.csv
