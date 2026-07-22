@@ -24,6 +24,14 @@ MEMBERS_PATHS = [
     DASHBOARD_DATA_DIR / "life_members.csv",
     OUTPUT_DIR / "life_members.csv",
 ]
+EXTERNAL_NEWS_PATHS = [
+    DASHBOARD_DATA_DIR / "external_news.csv",
+    OUTPUT_DIR / "external_news.csv",
+]
+MEMBER_JOBS_PATHS = [
+    DASHBOARD_DATA_DIR / "member_jobs.csv",
+    OUTPUT_DIR / "member_jobs.csv",
+]
 
 NEWSWORTHY = ["newsworthy", "possibly_newsworthy", "needs_review"]
 NOISE = ["noise"]
@@ -88,6 +96,13 @@ TREND_SIGNALS = [
         "newsletter_use": "Gebruik dit voor rubrieken rond technologie, data en nieuwe diagnostiek.",
         "source": "University of Groningen",
         "url": "https://www.rug.nl/fse/news/news-archive?lang=en",
+    },
+    {
+        "theme": "Breed RUG-nieuws als context",
+        "angle": "De algemene RUG-nieuwspagina bundelt universiteitsbreed nieuws, dossiers, events en RSS.",
+        "newsletter_use": "Gebruik dit als vroege signalering voor onderzoek, talent, maatschappelijke impact en mogelijke koppelingen met leden.",
+        "source": "RUG latest news",
+        "url": "https://www.rug.nl/about-ug/latest-news/news/",
     },
 ]
 
@@ -265,6 +280,32 @@ def clean_news(df: pd.DataFrame) -> pd.DataFrame:
         if column in df.columns:
             df[column] = pd.to_numeric(df[column], errors="coerce")
     for column in ["classification", "category", "member_name", "title", "summary_nl"]:
+        if column in df.columns:
+            df[column] = df[column].fillna("").astype(str)
+    return df
+
+
+def clean_external_news(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    df = df.copy()
+    if "item_date" in df.columns:
+        df["item_date"] = pd.to_datetime(df["item_date"], errors="coerce")
+    if "relevance_score" in df.columns:
+        df["relevance_score"] = pd.to_numeric(df["relevance_score"], errors="coerce")
+    for column in ["source_name", "matched_topics", "title", "summary"]:
+        if column in df.columns:
+            df[column] = df[column].fillna("").astype(str)
+    return df
+
+
+def clean_jobs(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    df = df.copy()
+    if "detected_at" in df.columns:
+        df["detected_at"] = pd.to_datetime(df["detected_at"], errors="coerce")
+    for column in ["member_name", "job_title", "location", "hours", "deadline", "signal_summary"]:
         if column in df.columns:
             df[column] = df[column].fillna("").astype(str)
     return df
@@ -574,6 +615,144 @@ def render_trends() -> None:
         st.markdown(f"- [{query}]({url})")
 
 
+def render_external_news(external_news: pd.DataFrame) -> None:
+    st.markdown('<div class="section-title">Externe signalen via RSS</div>', unsafe_allow_html=True)
+    st.caption("Context uit geselecteerde regionale kennis- en nieuwsbronnen. Gebruik dit als haakje naast ledennieuws.")
+    if external_news.empty:
+        st.info("Nog geen externe RSS-items gevonden. Draai de GitHub Action of upload external_news.csv.")
+        return
+
+    sort_cols = [col for col in ["item_date", "relevance_score"] if col in external_news.columns]
+    if sort_cols:
+        external_news = external_news.sort_values(sort_cols, ascending=False)
+
+    top = external_news.head(10)
+    for _, row in top.iterrows():
+        date_value = row.get("item_date")
+        date_text = date_value.date().isoformat() if pd.notna(date_value) else "Geen datum"
+        source = row.get("source_name", "Externe bron")
+        title = row.get("title", "Zonder titel")
+        summary = row.get("summary", "")
+        topics = row.get("matched_topics", "")
+        url = row.get("source_url", "")
+        st.markdown(
+            f"""
+            <div class="story-card">
+                <div class="story-meta">{date_text} · {source}</div>
+                <div class="story-title">{title}</div>
+                <div class="story-summary">{summary}</div>
+                <span class="pill">{topics or "context"}</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if url:
+            st.link_button("Open externe bron", url)
+
+    columns = [
+        col
+        for col in ["item_date", "source_name", "relevance_score", "matched_topics", "title", "source_url", "summary"]
+        if col in external_news.columns
+    ]
+    with st.expander("Alle externe RSS-items"):
+        st.dataframe(
+            external_news[columns],
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "item_date": st.column_config.DateColumn("Datum"),
+                "source_name": "Bron",
+                "relevance_score": st.column_config.NumberColumn("Score", format="%d"),
+                "matched_topics": "Thema's",
+                "source_url": st.column_config.LinkColumn("Link"),
+                "summary": "Samenvatting",
+            },
+        )
+
+
+def render_jobs(jobs: pd.DataFrame) -> None:
+    st.markdown('<div class="section-title">Vacatures & groei</div>', unsafe_allow_html=True)
+    st.caption("Vacatures zijn geen nieuwsitems, maar wel sterke signalen voor groei, talentbehoefte en nieuwe projecten.")
+
+    if jobs.empty:
+        st.info("Nog geen vacatures gevonden. Draai de GitHub Action of upload member_jobs.csv.")
+        return
+
+    member_count = jobs["member_name"].nunique() if "member_name" in jobs.columns else 0
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Vacatures gevonden", len(jobs))
+    col2.metric("Leden met vacatures", member_count)
+    col3.metric("Talent-signaal", "Hoog" if len(jobs) >= 10 else "Opbouwend")
+
+    left, right = st.columns([1.2, 1])
+    with left:
+        st.markdown("#### Openstaande signalen")
+        for _, row in jobs.head(12).iterrows():
+            member = row.get("member_name", "Onbekend lid")
+            title = row.get("job_title", "Vacature")
+            location = row.get("location", "")
+            hours = row.get("hours", "")
+            deadline = row.get("deadline", "")
+            source = row.get("source_url", "")
+            summary = row.get("signal_summary", "")
+            st.markdown(
+                f"""
+                <div class="story-card">
+                    <div class="story-meta">{member}</div>
+                    <div class="story-title">{title}</div>
+                    <div class="story-summary">{summary}</div>
+                    <span class="pill">{location or "locatie onbekend"}</span>
+                    <span class="pill">{hours or "uren onbekend"}</span>
+                    <span class="pill">{deadline or "deadline onbekend"}</span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if source:
+                st.link_button("Open vacaturepagina", source)
+
+    with right:
+        st.markdown("#### Nieuwsbriefhaakjes")
+        top_members = (
+            jobs.groupby("member_name", as_index=False)
+            .size()
+            .rename(columns={"size": "vacatures"})
+            .sort_values("vacatures", ascending=False)
+            .head(10)
+        )
+        if not top_members.empty:
+            st.bar_chart(top_members, x="member_name", y="vacatures", use_container_width=True)
+        st.markdown(
+            """
+            <div class="copy-box">Mogelijke invalshoeken:
+
+- Leden zoeken technisch en wetenschappelijk talent.
+- Vacatures wijzen op groei rond diagnostiek, imaging, productontwikkeling of operations.
+- Vraag leden met meerdere vacatures om een korte update: waarom groeien ze, welke expertise zoeken ze?</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    columns = [
+        col
+        for col in ["member_name", "job_title", "location", "hours", "deadline", "source_url", "detected_at", "signal_summary"]
+        if col in jobs.columns
+    ]
+    st.markdown("#### Alle vacatures")
+    st.dataframe(
+        jobs[columns],
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "member_name": "Lid",
+            "job_title": "Vacature",
+            "source_url": st.column_config.LinkColumn("Bron"),
+            "detected_at": st.column_config.DatetimeColumn("Gevonden op"),
+            "signal_summary": "Signaal",
+        },
+    )
+
+
 def render_news_table(news: pd.DataFrame) -> None:
     if news.empty:
         st.info("Geen nieuwsitems gevonden. Upload de CSV uit het GitHub Actions artifact of draai de pipeline.")
@@ -630,17 +809,20 @@ with st.sidebar:
 classified_news = clean_news(load_default_or_upload("classified_recent_news.csv", CLASSIFIED_NEWS_PATHS))
 recent_news = clean_news(load_default_or_upload("recent_news.csv", RECENT_NEWS_PATHS))
 members = load_default_or_upload("life_members.csv", MEMBERS_PATHS)
+external_news = clean_external_news(load_default_or_upload("external_news.csv", EXTERNAL_NEWS_PATHS))
+jobs = clean_jobs(load_default_or_upload("member_jobs.csv", MEMBER_JOBS_PATHS))
 
 news = classified_news if not classified_news.empty else recent_news
 filtered_news = apply_filters(news)
 
 render_hero(news, members)
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
     [
         "Nieuwsbrief",
         "Analyse",
         "Alle items",
+        "Vacatures & groei",
         "Leden coverage",
         "Trendradar",
     ]
@@ -656,7 +838,11 @@ with tab3:
     render_news_table(filtered_news)
 
 with tab4:
-    render_coverage(members)
+    render_jobs(jobs)
 
 with tab5:
+    render_coverage(members)
+
+with tab6:
     render_trends()
+    render_external_news(external_news)
