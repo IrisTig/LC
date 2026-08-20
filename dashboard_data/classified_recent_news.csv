@@ -1,1 +1,2 @@
 ﻿member_name,item_date,classification,category,confidence,title,source_url,summary_nl,review_reason,heuristic_score,heuristic_reason
+Opthec BV,2026-08-19,needs_review,unknown,0.45,First implantations Horizon Go,https://www.ophtec.com/blog/first-implantations-horizon-go,"First implantations Horizon Go is een artikelachtige pagina, maar vraagt menselijke controle.",Artikelachtige URL zonder genoeg inhoudelijke extractie voor hoge zekerheid.,18,product
