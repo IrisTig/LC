@@ -1,1 +1,2 @@
 ﻿member_name,item_date,classification,category,confidence,title,source_url,summary_nl,review_reason,heuristic_score,heuristic_reason
+Thermo Fisher,2026-08-27,possibly_newsworthy,event,0.55,Events and Webinars,https://www.thermofisher.com/us/en/home/events.html,Events and Webinars lijkt een event- of webinaritem van het lid.,"Eventcontent kan relevant zijn, maar is minder hard bedrijfsnieuws.",18,product
