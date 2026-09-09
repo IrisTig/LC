@@ -63,6 +63,27 @@ CATEGORY_LABELS = {
 
 TREND_SIGNALS = [
     {
+        "theme": "Lifelines zoekt nieuwe deelnemers",
+        "angle": "Lifelines nodigt voor het eerst in twintig jaar nieuwe deelnemers uit, met steun vanuit Nationaal Programma Groningen.",
+        "newsletter_use": "Sterk haakje voor onderzoek, preventie, data en maatschappelijke impact in Noord-Nederland.",
+        "source": "LIFE Cooperative nieuws",
+        "url": "https://lifecooperative.nl/",
+    },
+    {
+        "theme": "Innovation Award 2026",
+        "angle": "Vijf innovaties maken kans op de LIFE Science Innovation Award: Flux Robotics, Limosa Immunodiagnostics, SPCTR, MimeCure en GlycanScan International.",
+        "newsletter_use": "Gebruik als leden-/ecosysteemverhaal richting event, jury, partners en regionale zichtbaarheid.",
+        "source": "LIFE Cooperative nieuws",
+        "url": "https://lifecooperative.nl/",
+    },
+    {
+        "theme": "Nieuwe SDI-subsidieronde",
+        "angle": "ZonMw opent naar verwachting de laatste oproep binnen PharmaNL Shared Development Infrastructure.",
+        "newsletter_use": "Relevant voor leden die werken aan ontwikkeling, opschaling en productie van innovatieve geneesmiddelen.",
+        "source": "LIFE Cooperative nieuws",
+        "url": "https://lifecooperative.nl/",
+    },
+    {
         "theme": "Van visie naar uitvoering",
         "angle": "Regionale life sciences willen zichtbare economische impact laten zien.",
         "newsletter_use": "Gebruik dit als kapstok voor ledenverhalen over groei, samenwerking en valorisatie.",
@@ -118,134 +139,229 @@ st.markdown(
     """
     <style>
     :root {
-        --life-blue: #55a6d9;
-        --life-teal: #44c3b3;
-        --life-ink: #101620;
-        --life-soft: rgba(85, 166, 217, .12);
+        --life-blue: #009fe3;
+        --life-blue-dark: #14577a;
+        --life-teal: #40c7bf;
+        --life-mint: #dff7f3;
+        --life-ink: #173244;
+        --life-muted: #647887;
+        --life-line: rgba(20, 87, 122, .16);
+        --life-soft: rgba(0, 159, 227, .10);
+        --life-paper: #f4fbfd;
+        --life-white: #ffffff;
+    }
+    .stApp {
+        background:
+            radial-gradient(circle at 92% 8%, rgba(64, 199, 191, .18), transparent 26rem),
+            linear-gradient(180deg, #ffffff 0%, var(--life-paper) 42%, #eef8fb 100%);
+        color: var(--life-ink);
     }
     .block-container {
-        padding-top: 2.2rem;
+        padding-top: 1.4rem;
         padding-bottom: 4rem;
         max-width: 1440px;
     }
     [data-testid="stSidebar"] {
-        border-right: 1px solid rgba(148, 163, 184, .18);
+        background: #eaf7fb;
+        border-right: 1px solid var(--life-line);
+    }
+    [data-testid="stSidebar"] * {
+        color: var(--life-ink);
+    }
+    [data-testid="stSidebar"] [data-baseweb="select"],
+    [data-testid="stSidebar"] [data-testid="stFileUploader"] section,
+    [data-testid="stSidebar"] input {
+        background: var(--life-white);
+        border-radius: 8px;
     }
     .life-hero {
-        padding: 1.25rem 0 1.6rem 0;
-        border-bottom: 1px solid rgba(148, 163, 184, .20);
-        margin-bottom: 1.2rem;
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(260px, .75fr);
+        gap: 2rem;
+        align-items: end;
+        padding: 2.35rem 0 2.1rem 0;
+        border-bottom: 1px solid var(--life-line);
+        margin-bottom: 1.35rem;
     }
     .life-kicker {
-        color: var(--life-blue);
-        font-weight: 700;
-        letter-spacing: .08em;
+        color: var(--life-blue-dark);
+        font-weight: 800;
+        letter-spacing: .09em;
         text-transform: uppercase;
         font-size: .78rem;
-        margin-bottom: .35rem;
+        margin-bottom: .6rem;
     }
     .life-hero h1 {
-        font-size: clamp(2.1rem, 4.3vw, 4.8rem);
-        line-height: 1;
+        color: var(--life-ink);
+        font-size: clamp(2.45rem, 5.2vw, 5.4rem);
+        line-height: .96;
         margin: 0;
         letter-spacing: 0;
+        max-width: 980px;
     }
     .life-subtitle {
-        max-width: 860px;
-        color: rgba(229, 231, 235, .72);
-        font-size: 1.05rem;
-        margin-top: .9rem;
+        max-width: 760px;
+        color: var(--life-muted);
+        font-size: 1.12rem;
+        margin-top: 1rem;
+    }
+    .life-hero-panel {
+        background: var(--life-mint);
+        border-radius: 8px;
+        padding: 1.25rem 1.35rem;
+        border: 1px solid rgba(64, 199, 191, .36);
+    }
+    .life-hero-panel strong {
+        display: block;
+        color: var(--life-blue-dark);
+        font-size: .92rem;
+        margin-bottom: .45rem;
+    }
+    .life-hero-panel span {
+        color: var(--life-ink);
+        font-size: .98rem;
     }
     .metric-card {
-        border: 1px solid rgba(148, 163, 184, .18);
-        background: linear-gradient(145deg, rgba(85, 166, 217, .13), rgba(68, 195, 179, .06));
-        padding: 1rem 1.05rem;
+        border: 1px solid var(--life-line);
+        background: var(--life-white);
+        box-shadow: 0 18px 38px rgba(20, 87, 122, .08);
+        padding: 1.1rem 1.15rem;
         border-radius: 8px;
         min-height: 122px;
     }
     .metric-label {
-        color: rgba(229, 231, 235, .68);
+        color: var(--life-muted);
         font-size: .86rem;
         margin-bottom: .35rem;
     }
     .metric-value {
+        color: var(--life-blue-dark);
         font-size: 2.2rem;
         font-weight: 700;
         line-height: 1;
     }
     .metric-note {
         margin-top: .45rem;
-        color: rgba(229, 231, 235, .62);
+        color: var(--life-muted);
         font-size: .82rem;
     }
     .section-title {
         margin: 1.4rem 0 .5rem 0;
         font-size: 1.35rem;
         font-weight: 700;
+        color: var(--life-ink);
     }
     .story-card {
-        border: 1px solid rgba(148, 163, 184, .18);
-        border-left: 4px solid var(--life-blue);
+        border: 1px solid var(--life-line);
+        border-left: 5px solid var(--life-blue);
         border-radius: 8px;
-        padding: .95rem 1rem;
-        margin-bottom: .8rem;
-        background: rgba(15, 23, 42, .28);
+        padding: 1.05rem 1.15rem;
+        margin-bottom: .9rem;
+        background: var(--life-white);
+        box-shadow: 0 14px 28px rgba(20, 87, 122, .06);
     }
     .story-meta {
-        color: rgba(229, 231, 235, .64);
+        color: var(--life-blue-dark);
         font-size: .82rem;
+        font-weight: 700;
         margin-bottom: .25rem;
     }
     .story-title {
+        color: var(--life-ink);
         font-weight: 700;
-        font-size: 1.02rem;
+        font-size: 1.08rem;
         margin-bottom: .28rem;
     }
     .story-summary {
-        color: rgba(229, 231, 235, .76);
+        color: var(--life-muted);
         margin-bottom: .45rem;
     }
     .pill {
         display: inline-block;
-        border: 1px solid rgba(148, 163, 184, .22);
+        border: 1px solid rgba(0, 159, 227, .26);
+        background: rgba(0, 159, 227, .08);
         border-radius: 999px;
-        padding: .16rem .48rem;
+        padding: .18rem .54rem;
         margin-right: .25rem;
-        color: rgba(229, 231, 235, .76);
+        color: var(--life-blue-dark);
         font-size: .76rem;
     }
     .copy-box {
-        border: 1px dashed rgba(85, 166, 217, .45);
-        background: rgba(85, 166, 217, .08);
+        border: 1px dashed rgba(0, 159, 227, .42);
+        background: #eef9fd;
         padding: .9rem 1rem;
         border-radius: 8px;
         white-space: pre-wrap;
-        color: rgba(229, 231, 235, .86);
+        color: var(--life-ink);
     }
     .trend-card {
-        border: 1px solid rgba(148, 163, 184, .18);
+        border: 1px solid var(--life-line);
         border-radius: 8px;
         padding: 1rem;
         height: 100%;
-        background: rgba(15, 23, 42, .22);
+        background: var(--life-white);
+        box-shadow: 0 14px 28px rgba(20, 87, 122, .05);
     }
     .trend-card h4 {
+        color: var(--life-blue-dark);
         margin-top: 0;
         margin-bottom: .4rem;
     }
     .coverage-good {
-        color: #6ee7b7;
+        color: #13795b;
         font-weight: 700;
     }
     .coverage-missing {
-        color: #fca5a5;
+        color: #b42318;
         font-weight: 700;
     }
     div[data-testid="stMetric"] {
-        background: rgba(85, 166, 217, .08);
-        border: 1px solid rgba(148, 163, 184, .18);
+        background: var(--life-white);
+        border: 1px solid var(--life-line);
         border-radius: 8px;
         padding: .75rem .9rem;
+        box-shadow: 0 12px 24px rgba(20, 87, 122, .05);
+    }
+    h1, h2, h3, h4, h5, h6,
+    .stMarkdown, .stText, label, p {
+        color: var(--life-ink);
+    }
+    .stCaptionContainer, [data-testid="stCaptionContainer"] {
+        color: var(--life-muted);
+    }
+    button[kind="secondary"], a[data-testid="stLinkButton"] {
+        border-radius: 999px;
+        border-color: var(--life-blue) !important;
+        color: var(--life-blue-dark) !important;
+        background: #ffffff !important;
+    }
+    button[kind="secondary"]:hover, a[data-testid="stLinkButton"]:hover {
+        border-color: var(--life-blue-dark) !important;
+        color: #ffffff !important;
+        background: var(--life-blue-dark) !important;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: .35rem;
+        border-bottom: 1px solid var(--life-line);
+    }
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 999px 999px 0 0;
+        color: var(--life-blue-dark);
+        font-weight: 700;
+    }
+    .stTabs [aria-selected="true"] {
+        background: var(--life-blue);
+        color: #ffffff;
+    }
+    @media (max-width: 760px) {
+        .life-hero {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            padding-top: 1.25rem;
+        }
+        .life-hero h1 {
+            font-size: 2.5rem;
+        }
     }
     </style>
     """,
@@ -402,10 +518,18 @@ def render_hero(news: pd.DataFrame, members: pd.DataFrame) -> None:
     st.markdown(
         """
         <div class="life-hero">
-            <div class="life-kicker">Communicatie dashboard</div>
-            <h1>LIFE Cooperative Nieuwsradar</h1>
-            <div class="life-subtitle">
-                Vind ledennieuws, nieuwsbriefhaakjes en regionale trends zonder door tientallen websites te klikken.
+            <div>
+                <div class="life-kicker">LIFE Cooperative · Redactie-dashboard</div>
+                <h1>Nieuws en signalen uit Life Science, Health en MedTech.</h1>
+                <div class="life-subtitle">
+                    Voor het communicatieteam: vind ledennieuws, vacatures, regionale haakjes en concrete input voor nieuwsbrieven.
+                </div>
+            </div>
+            <div class="life-hero-panel">
+                <strong>Impact van echte verbinding</strong>
+                <span>
+                    Dagelijks zicht op leden, trends en kansen om de noordelijke Life Sciences & Health-sector sterker te vertellen.
+                </span>
             </div>
         </div>
         """,
