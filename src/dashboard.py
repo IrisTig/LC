@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import html as html_lib
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -165,6 +166,14 @@ st.markdown(
         background: #eaf7fb;
         border-right: 1px solid var(--life-line);
     }
+    header[data-testid="stHeader"] {
+        background: transparent;
+    }
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    #MainMenu {
+        display: none;
+    }
     [data-testid="stSidebar"] * {
         color: var(--life-ink);
     }
@@ -173,6 +182,70 @@ st.markdown(
     [data-testid="stSidebar"] input {
         background: var(--life-white);
         border-radius: 8px;
+    }
+    .lc-nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.25rem;
+        width: 100%;
+        padding: 1.05rem 1.35rem;
+        margin: .25rem 0 2.2rem 0;
+        background: var(--life-white);
+        border-radius: 999px;
+        box-shadow: 0 14px 34px rgba(20, 87, 122, .10);
+    }
+    .lc-brand {
+        display: flex;
+        align-items: center;
+        gap: .58rem;
+        min-width: 220px;
+    }
+    .lc-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 3.25rem;
+        height: 2.2rem;
+        border-radius: 999px;
+        background: #d70846;
+        color: #fff;
+        font-weight: 900;
+        font-size: 1.05rem;
+        font-style: italic;
+        letter-spacing: -.04em;
+        transform: skew(-8deg);
+    }
+    .lc-wordmark {
+        display: flex;
+        flex-direction: column;
+        line-height: 1;
+    }
+    .lc-wordmark strong {
+        color: #18385a;
+        font-size: 1.3rem;
+        letter-spacing: -.02em;
+    }
+    .lc-wordmark span {
+        color: var(--life-muted);
+        font-size: .62rem;
+        margin-top: .17rem;
+    }
+    .lc-nav-links {
+        display: flex;
+        align-items: center;
+        gap: 2.2rem;
+        color: #18385a;
+        font-weight: 600;
+        font-size: .98rem;
+    }
+    .lc-nav-cta {
+        border-radius: 999px;
+        background: #d70846;
+        color: #fff;
+        padding: .68rem 1.15rem;
+        font-weight: 800;
+        white-space: nowrap;
     }
     .life-hero {
         display: grid;
@@ -353,7 +426,59 @@ st.markdown(
         background: var(--life-blue);
         color: #ffffff;
     }
+    .light-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid var(--life-line);
+        border-radius: 8px;
+        background: var(--life-white);
+        box-shadow: 0 14px 28px rgba(20, 87, 122, .05);
+    }
+    .light-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .9rem;
+    }
+    .light-table th {
+        background: #eaf7fb;
+        color: var(--life-blue-dark);
+        font-weight: 800;
+        text-align: left;
+        padding: .72rem .8rem;
+        border-bottom: 1px solid var(--life-line);
+        white-space: nowrap;
+    }
+    .light-table td {
+        color: var(--life-ink);
+        padding: .68rem .8rem;
+        border-bottom: 1px solid rgba(20, 87, 122, .10);
+        vertical-align: top;
+        max-width: 520px;
+    }
+    .light-table tr:nth-child(even) td {
+        background: #f8fcfe;
+    }
+    .light-table tr:last-child td {
+        border-bottom: 0;
+    }
+    .light-table a {
+        color: var(--life-blue-dark);
+        font-weight: 700;
+        text-decoration: none;
+    }
+    .light-table a:hover {
+        text-decoration: underline;
+    }
     @media (max-width: 760px) {
+        .lc-nav {
+            align-items: flex-start;
+            border-radius: 18px;
+            flex-direction: column;
+        }
+        .lc-nav-links {
+            gap: .8rem;
+            flex-wrap: wrap;
+        }
         .life-hero {
             grid-template-columns: 1fr;
             gap: 1rem;
@@ -433,6 +558,83 @@ def display_class(value: str) -> str:
 
 def display_category(value: str) -> str:
     return CATEGORY_LABELS.get(value, value.replace("_", " ").title())
+
+
+def render_lc_nav() -> None:
+    st.markdown(
+        """
+        <div class="lc-nav">
+            <div class="lc-brand">
+                <div class="lc-mark">LIFE</div>
+                <div class="lc-wordmark">
+                    <strong>Cooperative</strong>
+                    <span>there's more to healthy ageing</span>
+                </div>
+            </div>
+            <div class="lc-nav-links">
+                <span>Programs</span>
+                <span>Members</span>
+                <span>Events</span>
+                <span>News</span>
+                <span>About us</span>
+            </div>
+            <div class="lc-nav-cta">Redactie</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def format_cell(value) -> str:
+    if pd.isna(value):
+        return ""
+    if isinstance(value, pd.Timestamp):
+        if pd.isna(value):
+            return ""
+        return value.date().isoformat()
+    return str(value)
+
+
+def render_light_table(
+    df: pd.DataFrame,
+    columns: list[str],
+    labels: dict[str, str] | None = None,
+    link_columns: set[str] | None = None,
+    max_rows: int = 80,
+) -> None:
+    labels = labels or {}
+    link_columns = link_columns or set()
+    if df.empty or not columns:
+        st.info("Geen rijen om te tonen.")
+        return
+
+    visible = df[columns].head(max_rows).copy()
+    header = "".join(f"<th>{html_lib.escape(labels.get(col, col))}</th>" for col in columns)
+    rows: list[str] = []
+    for _, row in visible.iterrows():
+        cells: list[str] = []
+        for col in columns:
+            value = format_cell(row.get(col, ""))
+            if col in link_columns and value:
+                safe_url = html_lib.escape(value, quote=True)
+                cells.append(f'<td><a href="{safe_url}" target="_blank" rel="noopener">Open link</a></td>')
+            else:
+                cells.append(f"<td>{html_lib.escape(value)}</td>")
+        rows.append("<tr>" + "".join(cells) + "</tr>")
+
+    st.markdown(
+        f"""
+        <div class="light-table-wrap">
+            <table class="light-table">
+                <thead><tr>{header}</tr></thead>
+                <tbody>{''.join(rows)}</tbody>
+            </table>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if len(df) > max_rows:
+        st.caption(f"Toont {max_rows} van {len(df)} rijen.")
 
 
 def useful_news(news: pd.DataFrame) -> pd.DataFrame:
@@ -693,11 +895,11 @@ def render_coverage(members: pd.DataFrame) -> None:
         st.success("Alle leden hebben een website in de monitor.")
     else:
         columns = [col for col in ["name", "detail_url", "description"] if col in missing_df.columns]
-        st.dataframe(
-            missing_df[columns],
-            use_container_width=True,
-            hide_index=True,
-            column_config={"detail_url": st.column_config.LinkColumn("LIFE profiel")},
+        render_light_table(
+            missing_df,
+            columns,
+            labels={"name": "Lid", "detail_url": "LIFE profiel", "description": "Omschrijving"},
+            link_columns={"detail_url"},
         )
 
 
@@ -779,18 +981,19 @@ def render_external_news(external_news: pd.DataFrame) -> None:
         if col in external_news.columns
     ]
     with st.expander("Alle externe RSS-items"):
-        st.dataframe(
-            external_news[columns],
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "item_date": st.column_config.DateColumn("Datum"),
+        render_light_table(
+            external_news,
+            columns,
+            labels={
+                "item_date": "Datum",
                 "source_name": "Bron",
-                "relevance_score": st.column_config.NumberColumn("Score", format="%d"),
+                "relevance_score": "Score",
                 "matched_topics": "Thema's",
-                "source_url": st.column_config.LinkColumn("Link"),
+                "title": "Titel",
+                "source_url": "Link",
                 "summary": "Samenvatting",
             },
+            link_columns={"source_url"},
         )
 
 
@@ -863,17 +1066,20 @@ def render_jobs(jobs: pd.DataFrame) -> None:
         if col in jobs.columns
     ]
     st.markdown("#### Alle vacatures")
-    st.dataframe(
-        jobs[columns],
-        use_container_width=True,
-        hide_index=True,
-        column_config={
+    render_light_table(
+        jobs,
+        columns,
+        labels={
             "member_name": "Lid",
             "job_title": "Vacature",
-            "source_url": st.column_config.LinkColumn("Bron"),
-            "detected_at": st.column_config.DatetimeColumn("Gevonden op"),
+            "location": "Locatie",
+            "hours": "Uren",
+            "deadline": "Deadline",
+            "source_url": "Bron",
+            "detected_at": "Gevonden op",
             "signal_summary": "Signaal",
         },
+        link_columns={"source_url"},
     )
 
 
@@ -906,20 +1112,20 @@ def render_news_table(news: pd.DataFrame) -> None:
     if sort_cols:
         table = table.sort_values(sort_cols, ascending=False)
 
-    st.dataframe(
+    render_light_table(
         table,
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "item_date": st.column_config.DateColumn("Datum"),
+        columns,
+        labels={
+            "item_date": "Datum",
             "member_name": "Lid",
             "classification": "Status",
             "category": "Thema",
-            "source_url": st.column_config.LinkColumn("Bron"),
-            "confidence": st.column_config.NumberColumn("Score", format="%.2f"),
+            "source_url": "Bron",
+            "confidence": "Score",
             "summary_nl": "Samenvatting",
             "review_reason": "Waarom geselecteerd",
         },
+        link_columns={"source_url"},
     )
 
 
@@ -939,6 +1145,7 @@ jobs = clean_jobs(load_default_or_upload("member_jobs.csv", MEMBER_JOBS_PATHS))
 news = classified_news if not classified_news.empty else recent_news
 filtered_news = apply_filters(news)
 
+render_lc_nav()
 render_hero(news, members)
 
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
